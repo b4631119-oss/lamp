@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hyper-Realistic Lamp</title>
+    <style>
+        :root {
+            /* Настройки размера */
+            --size: clamp(100px, 35vmin, 220px);
+            --wire: clamp(60px, 20vmin, 140px);
+            
+            /* Цвета */
+            --bg-deep: #050508;
+            --bg-glow: #1c1c28;
+            --glass-off: #151518;
+            --glass-on: #fff9c4;
+            --glow-color: #ffea00;
+            --metal: linear-gradient(135deg, #888, #333, #666);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-deep);
+            overflow: hidden;
+            transition: background 1.5s ease;
+            font-family: system-ui, -apple-system, sans-serif;
+            perspective: 1000px; /* Для 3D эффектов */
+        }
+
+        /* Окружающая среда реагирует на свет */
+        body.on {
+            background: radial-gradient(circle at 50% 40%, var(--bg-glow) 0%, var(--bg-deep) 70%);
+        }
+
+        .scene {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: top center;
+            transform-style: preserve-3d;
+        }
+
+        .scene.swing {
+            animation: swing 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes swing {
+            0% { transform: rotate(0deg) translateZ(0); }
+            20% { transform: rotate(8deg) translateZ(10px); }
+            40% { transform: rotate(-6deg) translateZ(0); }
+            60% { transform: rotate(4deg) translateZ(-5px); }
+            80% { transform: rotate(-2deg) translateZ(0); }
+            100% { transform: rotate(0deg) translateZ(0); }
+        }
+
+        /* --- ПРОВОД --- */
+        .wire {
+            width: 3px;
+            height: var(--wire);
+            background: linear-gradient(to right, #111, #555, #111);
+            box-shadow: 0 0 5px rgba(0,0,0,0.8);
+        }
+
+        /* --- ЛАМПОЧКА --- */
+        .bulb {
+            position: relative;
+            width: var(--size);
+            height: var(--size);
+            z-index: 2;
+            transform-style: preserve-3d;
+        }
+
+        /* Стекло */
+        .glass {
+            width: 100%;
+            height: 100%;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            background: radial-gradient(circle at 35% 30%, #2a2a30, var(--glass-off));
+            border: 1px solid rgba(255,255,255,0.05);
+            /* Внутренние тени для объема */
+            box-shadow: 
+                inset 0 -20px 30px rgba(0,0,0,0.9), 
+                inset 0 10px 20px rgba(255,255,255,0.05),
+                0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Блик на стекле (3D эффект) */
+        .glass::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 30%;
+            height: 40%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
+            filter: blur(2px);
+            transform: rotate(-30deg);
+        }
+
+        /* Спираль накаливания */
+        .filament {
+            width: 50%;
+            height: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20,80 L20,50 L30,40 L40,50 L50,40 L60,50 L70,40 L80,50 L80,80' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* Цоколь */
+        .base {
+            width: 50%;
+            height: 25%;
+            background: var(--metal);
+            margin: -10% auto 0;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 1;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(0,0,0,0.4) 5px, rgba(0,0,0,0.4) 7px);
+        }
+
+        /* --- ВЕРЕВКА --- */
+        .cord-area {
+            position: absolute;
+            top: calc(var(--wire) + var(--size) - 10px);
+            width: 80px; /* Огромная зона клика */
+            height: clamp(80px, 25vmin, 180px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .cord-string {
+            width: 4px;
+            height: 75%;
+            background: repeating-linear-gradient(45deg, #333, #333 4px, #555 4px, #555 8px);
+            transition: height 0.15s ease-out;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        .cord-handle {
+            width: 18px;
+            height: 35px;
+            background: var(--metal);
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.5);
+            transition: transform 0.15s ease-out;
+        }
+
+        .cord-area:active .cord-string { height: 85%; }
+        .cord-area:active .cord-handle { transform: translateY(15px); }
+
+        /* --- СВЕТОВОЙ КОНУС И ЧАСТИЦЫ --- */
+        .light-beam {
+            position: absolute;
+            top: calc(var(--wire) + var(--size) / 2);
+            width: 150%;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(255, 234, 0, 0.15), transparent 80%);
+            clip-path: polygon(40% 0, 60% 0, 100% 100%, 0% 100%);
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(10px);
+        }
+
+        .particles {
+            position: absolute;
+            top: calc(var(--wire) + var(--size) / 2);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--glow-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--glow-color);
+            animation: float 4s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+
+        /* --- СОСТОЯНИЕ "ВКЛЮЧЕНО" --- */
+        body.on .glass {
+            background: radial-gradient(circle at 50% 50%, #ffffff, var(--glass-on) 40%, #ffaa00 100%);
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 
+                0 0 30px var(--glow-color),
+                0 0 80px rgba(255, 234, 0, 0.6),
+                0 0 150px rgba(255, 234, 0, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.9);
+            animation: pulse 3s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 30px var(--glow-color), 0 0 80px rgba(255, 234, 0, 0.6), 0 0 150px rgba(255, 234, 0, 0.3), inset 0 0 30px rgba(255, 255, 255, 0.9); }
+            to { box-shadow: 0 0 40px var(--glow-color), 0 0 100px rgba(255, 234, 0, 0.7), 0 0 180px rgba(255, 234, 0, 0.4), inset 0 0 40px rgba(255, 255, 255, 1); }
+        }
+
+        body.on .filament {
+            opacity: 1;
+            animation: filamentGlow 1.5s infinite alternate;
+        }
+
+        @keyframes filamentGlow {
+            from { filter: drop-shadow(0 0 5px #fff); }
+            to { filter: drop-shadow(0 0 15px #fff) drop-shadow(0 0 30px var(--glow-color)); }
+        }
+
+        body.on .light-beam { opacity: 1; }
+        body.on .particles { opacity: 1; }
+
+        /* Эффект мерцания при включении */
+        body.on .glass { animation: flicker 0.6s ease-in-out, pulse 3s infinite alternate 0.6s; }
+
+        @keyframes flicker {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            40% { opacity: 0.4; }
+            60% { opacity: 1; }
+            100% { opacity: 1; }
+        }
+
+        /* Подсказка */
+        .hint {
+            position: absolute;
+            bottom: 30px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: blink 2s infinite;
+            pointer-events: none;
+        }
+        @keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        body.on .hint { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="scene" id="scene">
+        <div class="wire"></div>
+        <div class="bulb">
+            <div class="glass">
+                <div class="filament"></div>
+            </div>
+            <div class="base"></div>
+        </div>
+        
+        <div class="light-beam"></div>
+        
+        <div class="cord-area" id="cordArea">
+            <div class="cord-string"></div>
+            <div class="cord-handle"></div>
+        </div>
+    </div>
+
+    <!-- Частицы создаются через JS -->
+    <div class="particles" id="particles"></div>
+    
+    <div class="hint">Дерни за веревку</div>
+
+    <script>
+        const cordArea = document.getElementById('cordArea');
+        const scene = document.getElementById('scene');
+        const body = document.body;
+        const particlesContainer = document.getElementById('particles');
+
+        // --- ГЕНЕРАЦИЯ ЧАСТИЦ ---
+        function createParticles() {
+            for (let i = 0; i < 15; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.style.left = Math.random() * 100 + '%';
+                p.style.top = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 4 + 's';
+                p.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                particlesContainer.appendChild(p);
+            }
+        }
+        createParticles();
+
+        // --- ЗВУК (Web Audio API) ---
+        let audioCtx;
+        function playClickSound() {
+            if (!audioCtx) {
+                // Инициализация при первом клике (требование браузеров)
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            // Настройка звука "щелчка"
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ---
+        function toggleLight(e) {
+            if (e) e.preventDefault(); 
+
+            // 1. Звук
+            playClickSound();
+
+            // 2. Вибрация
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // 3. Свет
+            body.classList.toggle('on');
+            
+            // 4. Раскачивание
+            scene.classList.remove('swing');
+            void scene.offsetWidth; 
+            scene.classList.add('swing');
+            
+            setTimeout(() => {
+                scene.classList.remove('swing');
+            }, 1000);
+        }
+
+        cordArea.addEventListener('pointerdown', toggleLight);
+    </script>
+</body>
+</html>
